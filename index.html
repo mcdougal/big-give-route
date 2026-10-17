@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Big Give, Oct. 2026</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #1f2933;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+      background: #ffffff;
+    }
+
+    .view-tabs {
+      z-index: 10;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      flex: 0 0 auto;
+      gap: 6px;
+      padding: calc(8px + env(safe-area-inset-top)) 8px 8px;
+      border-bottom: 1px solid #d7dde5;
+      background: #ffffff;
+    }
+
+    .view-tab {
+      min-height: 42px;
+      border: 1px solid #c7d0da;
+      border-radius: 8px;
+      background: #f7f9fb;
+      color: #334e68;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .view-tab[aria-selected="true"] {
+      border-color: #0b5cab;
+      background: #0b5cab;
+      color: #ffffff;
+    }
+
+    .start-chooser {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: rgba(15, 23, 42, 0.64);
+      box-sizing: border-box;
+    }
+
+    .start-chooser[hidden] {
+      display: none;
+    }
+
+    .start-card {
+      width: min(100%, 420px);
+      border-radius: 14px;
+      background: #ffffff;
+      box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+      padding: 22px;
+      box-sizing: border-box;
+    }
+
+    .start-card h2 {
+      margin: 0 0 8px;
+      font-size: 22px;
+    }
+
+    .start-card select,
+    .start-card button {
+      width: 100%;
+      min-height: 46px;
+      border-radius: 8px;
+      font: inherit;
+      box-sizing: border-box;
+    }
+
+    .start-card select {
+      border: 1px solid #9aa9b8;
+      background: #ffffff;
+      padding: 0 12px;
+    }
+
+    .start-card button {
+      margin-top: 12px;
+      border: 0;
+      background: #0b5cab;
+      color: #ffffff;
+      font-weight: 700;
+    }
+
+    .layout {
+      position: relative;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+
+    #map,
+    .sidebar {
+      position: absolute;
+      inset: 0;
+      transition: opacity 120ms ease;
+    }
+
+    #map {
+      height: 100%;
+    }
+
+    .sidebar {
+      background: #ffffff;
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    body[data-view="list"] #map,
+    body[data-view="map"] .sidebar {
+      visibility: hidden;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    body[data-view="list"] .sidebar,
+    body[data-view="map"] #map {
+      visibility: visible;
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: #ffffff;
+      border-bottom: 1px solid #d7dde5;
+      padding: 16px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.25;
+    }
+
+    .meta {
+      margin-top: 6px;
+      color: #617080;
+      font-size: 13px;
+    }
+
+    .header-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .reset-button {
+      flex: 0 0 auto;
+      border: 1px solid #c7d0da;
+      border-radius: 6px;
+      background: #ffffff;
+      color: #334e68;
+      padding: 6px 9px;
+      font-size: 12px;
+    }
+
+    ol {
+      list-style: none;
+      margin: 0;
+      padding: 8px 0;
+    }
+
+    li {
+      display: grid;
+      grid-template-columns: 54px minmax(0, 1fr);
+      gap: 10px;
+      padding: 9px 14px;
+      border-bottom: 1px solid #eef1f5;
+      font-size: 14px;
+      line-height: 1.25;
+      cursor: pointer;
+      transition: background 120ms ease;
+    }
+
+    li:hover,
+    li:focus-visible {
+      background: #f3f7fb;
+      outline: none;
+    }
+
+    li.visited {
+      background: #edf7ee;
+      color: #52616f;
+    }
+
+    .address {
+      display: grid;
+      grid-template-columns: 18px minmax(0, 1fr);
+      gap: 7px;
+    }
+
+    .check {
+      visibility: hidden;
+      color: #137333;
+      font-weight: 700;
+    }
+
+    li.visited .check {
+      visibility: visible;
+    }
+
+    .num {
+      font-weight: 700;
+      color: #0b5cab;
+      text-align: right;
+    }
+
+    .start .num {
+      color: #137333;
+    }
+
+    .marker {
+      min-width: 26px;
+      height: 26px;
+      padding: 0 5px;
+      border-radius: 13px;
+      background: #0b5cab;
+      color: #ffffff;
+      border: 2px solid #ffffff;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      box-sizing: border-box;
+      white-space: nowrap;
+    }
+
+    .marker.start {
+      background: #137333;
+      font-size: 10px;
+      min-width: 44px;
+    }
+
+  </style>
+</head>
+<body data-view="list">
+  <section class="start-chooser" id="start-chooser" aria-labelledby="start-title">
+    <form class="start-card" id="start-form">
+      <h2 id="start-title">Where do you want to start?</h2>
+      <select id="start-address" required aria-label="Starting address">
+        <option value="" selected disabled>Select an address</option>
+      </select>
+      <button type="submit">Start route</button>
+    </form>
+  </section>
+
+  <div class="layout">
+    
+    <aside class="sidebar">
+      <div class="header">
+        <div class="header-row">
+          <h1>Big Give, Oct. 2026</h1>
+          <button class="reset-button" id="reset-route" type="button">Reset route</button>
+        </div>
+        <div class="meta">Tap a stop to navigate.</div>
+      </div>
+      <ol id="route-list"></ol>
+    </aside>
+  </div>
+
+  <script>
+    const routePoints = [{"address":"78 Highview Dr, Rocky Hill, CT, USA","shortAddress":"78 Highview Dr","placeId":"ChIJwyV35U9M5okRHAct0xIo85g"},{"address":"199 Farms Village Rd, Rocky Hill, CT, USA","shortAddress":"199 Farms Village Rd","placeId":"ChIJcbJDQFtM5okRbnDvgYFlcQQ"},{"address":"65 Toll Gate Rd, Rocky Hill, CT, USA","shortAddress":"65 Toll Gate Rd","placeId":"ChIJnaxzSk9M5okRnSFTqf7lBQM"},{"address":"26 Toll Gate Road, Rocky Hill, CT, USA","shortAddress":"26 Toll Gate Road","placeId":"ChIJx6LZq0hM5okRV9BxKB5iIR0"},{"address":"5 Stones Throw Ct, Rocky Hill, CT, USA","shortAddress":"5 Stones Throw Ct","placeId":"ChIJ8eQz4EhM5okRaazrjjRaQDY"},{"address":"26 Walnut Road, Rocky Hill, CT, USA","shortAddress":"26 Walnut Road","placeId":"ChIJowJ6LEpM5okRu-OfKSe16co"},{"address":"36 Walnut Rd, Rocky Hill, CT, USA","shortAddress":"36 Walnut Rd","placeId":"ChIJ13jYIEpM5okR_S-dygkRy-0"},{"address":"30 Westbrook Rd, Rocky Hill, CT, USA","shortAddress":"30 Westbrook Rd","placeId":"ChIJ9c26dE1M5okRjnpPPKMMmfE"},{"address":"11 Webber Rd, Rocky Hill, CT, USA","shortAddress":"11 Webber Rd","placeId":"ChIJXcgRnspN5okRMjibw3crRoI"},{"address":"33 Oak Hill Rd, Rocky Hill, CT, USA","shortAddress":"33 Oak Hill Rd","placeId":"ChIJJSeVYM5N5okRTGdXSlJO69Q"},{"address":"46 Riverview Road, Rocky Hill, CT, USA","shortAddress":"46 Riverview Road","placeId":"ChIJSxMYfcFN5okRqBZ_kxovfQg"},{"address":"32 Riverview Road, Rocky Hill, CT, USA","shortAddress":"32 Riverview Road","placeId":"ChIJSYYCn8FN5okRrMaI7FbbuT8"},{"address":"13 Riverview Road, Rocky Hill, CT, USA","shortAddress":"13 Riverview Road","placeId":"ChIJsQCLtcFN5okRHfZGqmNGxfA"},{"address":"10 Washington Street, Rocky Hill, CT, USA","shortAddress":"10 Washington Street","placeId":"ChIJpcjOAMFN5okRAVxAR6WL5SY"},{"address":"577 Old Main Street, Rocky Hill, CT, USA","shortAddress":"577 Old Main Street","placeId":"ChIJUwkgW5VN5okR6cVT5JmLLLI"},{"address":"227 Old Main Street, Rocky Hill, CT, USA","shortAddress":"227 Old Main Street","placeId":"ChIJmby3ppFN5okRu_C_k-Ohe0s"},{"address":"103 Bailey Road, Rocky Hill, CT, USA","shortAddress":"103 Bailey Road","placeId":"ChIJuwdsS71N5okR40qNx7_o35Q"},{"address":"21 Textbook Ave, Rocky Hill, CT, USA","shortAddress":"21 Textbook Ave","placeId":"ChIJjUzs96NN5okRggi3w8FjxXE"},{"address":"79 Quail Dr, Rocky Hill, CT, USA","shortAddress":"79 Quail Dr","placeId":"ChIJDUSAIqFN5okR6bziXLe2Imk"},{"address":"47 Quail Drive, Rocky Hill, CT, USA","shortAddress":"47 Quail Drive","placeId":"ChIJb2OlCKFN5okRkcY9NmWn5Ww"},{"address":"125 Partridge Dr, Rocky Hill, CT, USA","shortAddress":"125 Partridge Dr","placeId":"ChIJOZWpW6dN5okRRX_0pG3YUaQ"},{"address":"89 Bayberry Lane, Rocky Hill, CT, USA","shortAddress":"89 Bayberry Lane","placeId":"ChIJ_XAdwKdN5okRqr-w1zM9JtU"},{"address":"147 Bayberry Lane, Rocky Hill, CT, USA","shortAddress":"147 Bayberry Lane","placeId":"ChIJX39bBQhN5okRWGrqpRxXfAA"},{"address":"90 Wright Road, Rocky Hill, CT, USA","shortAddress":"90 Wright Road","placeId":"ChIJO26HQahN5okRSCiJvD8hjWY"},{"address":"692 Elm Street, Rocky Hill, CT, USA","shortAddress":"692 Elm Street","placeId":"ChIJc9eNUQdN5okRbZ11aZ-t45A"},{"address":"285 Silo Drive, Rocky Hill, CT, USA","shortAddress":"285 Silo Drive","placeId":"ChIJq7SObwFN5okRkG1HmXXLOS0"},{"address":"90 Silo Drive, Rocky Hill, CT, USA","shortAddress":"90 Silo Drive","placeId":"ChIJdXaKGP5M5okRhmR4lsX2WLE"},{"address":"108 Gilbert Ave, Rocky Hill, CT, USA","shortAddress":"108 Gilbert Ave","placeId":"ChIJbQ6zAgdN5okRJmBfJsJov8M"},{"address":"32 Gilbert Ave, Rocky Hill, CT, USA","shortAddress":"32 Gilbert Ave","placeId":"ChIJVVAkFAlN5okR9Yss3Ufl02E"},{"address":"12 Allison Way, Rocky Hill, CT, USA","shortAddress":"12 Allison Way","placeId":"ChIJUzLpuA5N5okR1W4ByuUESbo"},{"address":"42 Caliber Lane, Rocky Hill, CT, USA","shortAddress":"42 Caliber Lane","placeId":"ChIJd6khI3ZN5okR87WIoe6DH-I"},{"address":"205 Starr Drive, Rocky Hill, CT, USA","shortAddress":"205 Starr Drive","placeId":"ChIJlUcsqJ1N5okRIgXSOrNSJNw"},{"address":"15 Waters Ave, Rocky Hill, CT, USA","shortAddress":"15 Waters Ave","placeId":"ChIJWdrk4Z1N5okRLKq45CUEi9g"},{"address":"1231 Maple Street, Rocky Hill, CT, USA","shortAddress":"1231 Maple Street","placeId":"ChIJ73okURpN5okRTKscScK5go4"},{"address":"73 Farview Drive, Rocky Hill, CT, USA","shortAddress":"73 Farview Drive","placeId":"ChIJWRAlMxtN5okR9sjBu2rncig"},{"address":"150 Westmeadow Rd, Rocky Hill, CT, USA","shortAddress":"150 Westmeadow Rd","placeId":"ChIJR-dRySBN5okRVMmleZvburY"},{"address":"70 Ridgewood Drive, Rocky Hill, CT, USA","shortAddress":"70 Ridgewood Drive","placeId":"ChIJs7GYMyZN5okRyJJWDR1Jt0U"},{"address":"31 Pine Meadow Road, Rocky Hill, CT, USA","shortAddress":"31 Pine Meadow Road","placeId":"ChIJpUayXyhN5okRHGxiEDIIm3Q"},{"address":"30 Pine Meadow Rd, Rocky Hill, CT, USA","shortAddress":"30 Pine Meadow Rd","placeId":"ChIJsTdDXChN5okRMFw9WPs7fx0"},{"address":"1 Highpoint Drive, Rocky Hill, CT, USA","shortAddress":"1 Highpoint Drive","placeId":"EikxIEhpZ2hwb2ludCBEciwgUm9ja3kgSGlsbCwgQ1QgMDYwNjcsIFVTQSIwEi4KFAoSCckNSqMpTeaJET-CpGq37zVrEAEqFAoSCYnCd5wpTeaJEWGcSiwEoiCi"},{"address":"153 Catherine Drive, Rocky Hill, CT, USA","shortAddress":"153 Catherine Drive","placeId":"ChIJd-TNpNZM5okReVfkUcjL5SM"},{"address":"26 Bucks Crossing, Rocky Hill, CT, USA","shortAddress":"26 Bucks Crossing","placeId":"ChIJv1u2hc9M5okRi5FQYOAIS9g"},{"address":"546 France St, Rocky Hill, CT, USA","shortAddress":"546 France St","placeId":"ChIJ8cyZ98ZM5okRN2ttWJHfsvo"},{"address":"107 Fox Hill Drive, Rocky Hill, CT, USA","shortAddress":"107 Fox Hill Drive","placeId":"ChIJx95VdcdM5okRvptb2qTz0w0"},{"address":"49 Fieldstone Drive, Rocky Hill, CT, USA","shortAddress":"49 Fieldstone Drive","placeId":"ChIJI9LtncNM5okR2Xlk1aK01Fg"},{"address":"18 Highland Street, Rocky Hill, CT, USA","shortAddress":"18 Highland Street","placeId":"ChIJXfNMTOpM5okRrgczTo8vnsM"},{"address":"80 Highland St, Rocky Hill, CT, USA","shortAddress":"80 Highland St","placeId":"ChIJk-4YJepM5okR-UN4ap9UbFw"},{"address":"16 Krol Farm Rd, Rocky Hill, CT, USA","shortAddress":"16 Krol Farm Rd","placeId":"ChIJ6dBaYt1M5okR4Q8r5ImE244"},{"address":"11 Murphy Drive, Rocky Hill, CT, USA","shortAddress":"11 Murphy Drive","placeId":"ChIJixCdkedM5okRzMQq4tiVJXQ"},{"address":"60 Wynding Brook Dr, Rocky Hill, CT, USA","shortAddress":"60 Wynding Brook Dr","placeId":"ChIJacGyYuhM5okRRvl4e6_ZxoY"},{"address":"173 Wynding Brook Dr, Rocky Hill, CT, USA","shortAddress":"173 Wynding Brook Dr","placeId":"ChIJU_o5gulM5okRZON3K_G_q8c"}];
+    const visitedStorageKey = 'rocky-hill-route-visited-v1';
+    const startStorageKey = 'rocky-hill-route-start-v1';
+
+    function showView(view) {
+      document.body.dataset.view = view;
+      document.getElementById('list-tab')?.setAttribute('aria-selected', String(view === 'list'));
+      document.getElementById('map-tab')?.setAttribute('aria-selected', String(view === 'map'));
+    }
+
+    document.getElementById('list-tab')?.addEventListener('click', () => showView('list'));
+    document.getElementById('map-tab')?.addEventListener('click', () => showView('map'));
+
+    function loadStartAddress() {
+      try {
+        const saved = localStorage.getItem(startStorageKey);
+        return routePoints.some((point) => point.address === saved) ? saved : null;
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function chooseStartAddress() {
+      const chooser = document.getElementById('start-chooser');
+      const saved = loadStartAddress();
+      if (saved) {
+        chooser.hidden = true;
+        return Promise.resolve(saved);
+      }
+
+      const form = document.getElementById('start-form');
+      const select = document.getElementById('start-address');
+      routePoints.forEach((point) => {
+        const option = document.createElement('option');
+        option.value = point.address;
+        option.textContent = point.shortAddress;
+        select.appendChild(option);
+      });
+
+      return new Promise((resolve) => {
+        form.addEventListener('submit', (event) => {
+          event.preventDefault();
+          const selected = select.value;
+          if (!selected) return;
+          try {
+            localStorage.setItem(startStorageKey, selected);
+          } catch (error) {
+            // The selected start still works for this session.
+          }
+          chooser.hidden = true;
+          resolve(selected);
+        }, { once: true });
+      });
+    }
+
+    function orderFromStart(startAddress) {
+      const startIndex = routePoints.findIndex((point) => point.address === startAddress);
+      const rotated = [...routePoints.slice(startIndex), ...routePoints.slice(0, startIndex)];
+      return rotated.map((point, index) => ({
+        ...point,
+        label: index === 0 ? 'START' : String(index)
+      }));
+    }
+
+    function loadVisited() {
+      try {
+        return new Set(JSON.parse(localStorage.getItem(visitedStorageKey) || '[]'));
+      } catch (error) {
+        return new Set();
+      }
+    }
+
+    function saveVisited(visited) {
+      try {
+        localStorage.setItem(visitedStorageKey, JSON.stringify([...visited]));
+      } catch (error) {
+        // Some HTML preview environments disable storage; navigation still works.
+      }
+    }
+
+    function directionsUrl(point) {
+      const params = new URLSearchParams({
+        api: '1',
+        destination: point.address,
+        travelmode: 'driving',
+        dir_action: 'navigate'
+      });
+      if (point.placeId) {
+        params.set('destination_place_id', point.placeId);
+      }
+      return `https://www.google.com/maps/dir/?${params.toString()}`;
+    }
+
+    function routeListItem(point, visited) {
+      const item = document.createElement('li');
+      item.className = point.label === 'START' ? 'start' : '';
+      item.tabIndex = 0;
+      item.setAttribute('role', 'link');
+      item.setAttribute('aria-label', `Navigate to ${point.shortAddress}`);
+      item.classList.toggle('visited', visited.has(point.address));
+
+      const number = document.createElement('span');
+      number.className = 'num';
+      number.textContent = point.label;
+
+      const address = document.createElement('span');
+      address.className = 'address';
+      const check = document.createElement('span');
+      check.className = 'check';
+      check.setAttribute('aria-hidden', 'true');
+      check.textContent = '✓';
+      const addressText = document.createElement('span');
+      addressText.textContent = point.shortAddress;
+      address.append(check, addressText);
+      item.append(number, address);
+
+      const navigate = () => {
+        visited.add(point.address);
+        saveVisited(visited);
+        item.classList.add('visited');
+        window.location.href = directionsUrl(point);
+      };
+      item.addEventListener('click', navigate);
+      item.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          navigate();
+        }
+      });
+      return item;
+    }
+
+    async function initializeRoute() {
+      const startAddress = await chooseStartAddress();
+      const orderedRoutePoints = orderFromStart(startAddress);
+      const list = document.getElementById('route-list');
+      const visited = loadVisited();
+
+      document.getElementById('reset-route').addEventListener('click', () => {
+        const confirmed = window.confirm(
+          'Reset this route? This will clear the starting address and all checkmarks.'
+        );
+        if (!confirmed) return;
+        try {
+          localStorage.removeItem(startStorageKey);
+          localStorage.removeItem(visitedStorageKey);
+        } catch (error) {
+          // Reloading still restarts the in-memory route.
+        }
+        window.location.reload();
+      });
+
+      orderedRoutePoints.forEach((point) => {
+        list.appendChild(routeListItem(point, visited));
+      });
+      return orderedRoutePoints;
+    }
+
+
+
+    initializeRoute();
+  </script>
+  
+</body>
+</html>
